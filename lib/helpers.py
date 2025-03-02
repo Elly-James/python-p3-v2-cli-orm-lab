@@ -1,95 +1,77 @@
 from models.department import Department
 from models.employee import Employee
 
+import json
 
-def exit_program():
-    print("Goodbye!")
-    exit()
-
-# We'll implement the department functions in this lesson
-
-
-def list_departments():
-    departments = Department.get_all()
-    for department in departments:
-        print(department)
-
-
-def find_department_by_name():
-    name = input("Enter the department's name: ")
-    department = Department.find_by_name(name)
-    print(department) if department else print(
-        f'Department {name} not found')
-
-
-def find_department_by_id():
-    # use a trailing underscore not to override the built-in id function
-    id_ = input("Enter the department's id: ")
-    department = Department.find_by_id(id_)
-    print(department) if department else print(f'Department {id_} not found')
-
-
-def create_department():
-    name = input("Enter the department's name: ")
-    location = input("Enter the department's location: ")
+def read_employees(file_path="employees.json"):
+    """Read employee data from a JSON file."""
     try:
-        department = Department.create(name, location)
-        print(f'Success: {department}')
-    except Exception as exc:
-        print("Error creating department: ", exc)
+        with open(file_path, "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return []
 
+def write_employees(employees, file_path="employees.json"):
+    """Write employee data to a JSON file."""
+    with open(file_path, "w") as file:
+        json.dump(employees, file, indent=4)
 
-def update_department():
-    id_ = input("Enter the department's id: ")
-    if department := Department.find_by_id(id_):
-        try:
-            name = input("Enter the department's new name: ")
-            department.name = name
-            location = input("Enter the department's new location: ")
-            department.location = location
+def update_employee(employee_id, updated_data, file_path="employees.json"):
+    """Update an employee's data."""
+    employees = read_employees(file_path)
+    for employee in employees:
+        if employee["id"] == employee_id:
+            employee.update(updated_data)
+            write_employees(employees, file_path)
+            return True
+    return False
 
-            department.update()
-            print(f'Success: {department}')
-        except Exception as exc:
-            print("Error updating department: ", exc)
-    else:
-        print(f'Department {id_} not found')
+def delete_employee(employee_id, file_path="employees.json"):
+    """Delete an employee by ID."""
+    employees = read_employees(file_path)
+    updated_employees = [emp for emp in employees if emp["id"] != employee_id]
+    if len(updated_employees) < len(employees):
+        write_employees(updated_employees, file_path)
+        return True
+    return False
 
+def list_employees(file_path="employees.json"):
+    """List all employees."""
+    employees = read_employees(file_path)
+    return employees
 
-def delete_department():
-    id_ = input("Enter the department's id: ")
-    if department := Department.find_by_id(id_):
-        department.delete()
-        print(f'Department {id_} deleted')
-    else:
-        print(f'Department {id_} not found')
+def find_employee_by_id(employee_id, file_path="employees.json"):
+    """Find an employee by ID."""
+    employees = read_employees(file_path)
+    for employee in employees:
+        if employee["id"] == employee_id:
+            return employee
+    return None
 
+def list_employees_by_department(department, file_path="employees.json"):
+    """List all employees in a specific department."""
+    employees = read_employees(file_path)
+    return [emp for emp in employees if emp.get("department") == department]
 
-# You'll implement the employee functions in the lab
+def calculate_average_salary(file_path="employees.json"):
+    """Calculate the average salary of employees."""
+    employees = read_employees(file_path)
+    total_salary = sum(emp.get("salary", 0) for emp in employees)
+    count = len(employees)
+    return total_salary / count if count > 0 else 0
 
-def list_employees():
-    pass
+def list_employees_above_salary(threshold, file_path="employees.json"):
+    """List employees earning above a certain salary."""
+    employees = read_employees(file_path)
+    return [emp for emp in employees if emp.get("salary", 0) > threshold]
 
+def count_employees_by_role(role, file_path="employees.json"):
+    """Count the number of employees in a specific role."""
+    employees = read_employees(file_path)
+    return sum(1 for emp in employees if emp.get("role") == role)
 
-def find_employee_by_name():
-    pass
-
-
-def find_employee_by_id():
-    pass
-
-
-def create_employee():
-    pass
-
-
-def update_employee():
-    pass
-
-
-def delete_employee():
-    pass
-
-
-def list_department_employees():
-    pass
+def add_employee(employee_data, file_path="employees.json"):
+    """Add a new employee."""
+    employees = read_employees(file_path)
+    employees.append(employee_data)
+    write_employees(employees, file_path)
